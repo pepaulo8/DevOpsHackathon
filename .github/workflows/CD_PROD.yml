@@ -1,0 +1,27 @@
+name: CD_RELEASE
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+
+      - name: Install SSH key
+        run: echo "$PROD_PRIVATE_KEY" > key && chmod 600 key
+
+      - name: Deploy application
+        run: |
+          scp -i key target/java-api.jar ${{ secrets.USER_NAME }}@${{ secrets.PROD_HOST }}:/java-api/java-api.jar
+          ssh -i key ${{ secrets.USER_NAME }}@${{ secrets.PROD_HOST }} "/usr/bin/java -jar -Dserver.port=8080 /java-api/java-api.jar"
